@@ -19,11 +19,11 @@ app.get("/api/flavors", async (req, res, next) => {
 app.post('/api/flavors', async(req, res, next) => {
     try {
       const SQL = `
-        INSERT INTO flavors(flavor_name)
-        VALUES($1)
+        INSERT INTO flavors(name,is_favorite)
+        VALUES($1,$2)
         RETURNING *
       `;
-      const response = await client.query(SQL,[req.body.flavor_name]);
+      const response = await client.query(SQL,[req.body.name,req.body.is_favorite]);
       res.send(response.rows[0]);
     }
     catch(error){
@@ -36,10 +36,10 @@ app.put('/api/flavors/:id', async(req, res, next) => {
     try {
       const SQL = `
         UPDATE flavors
-        SET flavor_name=$1
-        WHERE id=$2 RETURNING *
+        SET name=$1, is_favorite=$2, updated_at= now()
+        WHERE id=$3 RETURNING *
       `;
-  const response = await client.query(SQL, [ req.body.flavor_name,req.params.id]);
+  const response = await client.query(SQL, [req.body.name,req.body.is_favorite,req.params.id]);
   res.send(response.rows[0]);
     }
     catch(error){
@@ -67,28 +67,33 @@ async function init() {
 console.log("URL "+process.env.DATABASE_URL)
 await client.connect()
 console.log('connected to database')
+// stock INTEGER DEFAULT 0 NOT NULL,
+// price FLOAT DEFAULT 5.50 NOT NULL,
+// info VARCHAR(255)
+// INSERT INTO flavors(name,stock,price,info)
 let SQL = /*SQL*/ `
 DROP TABLE IF EXISTS flavors;
 CREATE TABLE flavors(
-    id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    is_favorite BOOLEAN,
     created_at TIMESTAMP DEFAULT now(),
-    updated_at TIMESTAMP DEFAULT now(),
-    flavor_name VARCHAR(255)
+    updated_at TIMESTAMP DEFAULT now()
 );
 
-INSERT INTO flavors(flavor_name) VALUES('chocolate');
-INSERT INTO flavors(flavor_name) VALUES('strawberry');
-INSERT INTO flavors(flavor_name) VALUES('razzberry');
-INSERT INTO flavors(flavor_name) VALUES('blueberry');
-INSERT INTO flavors(flavor_name) VALUES('blackberry');
-INSERT INTO flavors(flavor_name) VALUES('banana');
-INSERT INTO flavors(flavor_name) VALUES('vanilla');
-INSERT INTO flavors(flavor_name) VALUES('birthday cake');
-INSERT INTO flavors(flavor_name) VALUES('orange cream');
-INSERT INTO flavors(flavor_name) VALUES('chocolate chip');
-INSERT INTO flavors(flavor_name) VALUES('mint chocolate chip');
-`;
+INSERT INTO flavors(name,is_favorite) VALUES('chocolate',true);
+INSERT INTO flavors(name,is_favorite) VALUES('razzberry',true);
+INSERT INTO flavors(name,is_favorite) VALUES('chocolate chip',true);
+INSERT INTO flavors(name,is_favorite) VALUES('mint chocolate chip',true);
+INSERT INTO flavors(name,is_favorite) VALUES('strawberry',false);
+INSERT INTO flavors(name,is_favorite) VALUES('blueberry',false);
+INSERT INTO flavors(name,is_favorite) VALUES('blackberry',false);
+INSERT INTO flavors(name,is_favorite) VALUES('banana',false);
+INSERT INTO flavors(name,is_favorite) VALUES('vanilla',false);
+INSERT INTO flavors(name,is_favorite) VALUES('birthday cake',false);
+INSERT INTO flavors(name,is_favorite) VALUES('orange cream',false);
 
+`;
 await client.query(SQL)
 console.log("data seeded")
 
